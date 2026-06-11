@@ -1,0 +1,53 @@
+import { Mesh } from "three"
+import { RuleFactory } from "../controller/rules/rulefactory"
+import { importGltf } from "../utils/gltf"
+import { Rules } from "../controller/rules/rules"
+import { Sound } from "./sound"
+import { TableMesh } from "./tablemesh"
+import { TableGeometry } from "./tablegeometry"
+
+export class Assets {
+  ready
+  rules: Rules
+  background: Mesh
+  table: Mesh
+
+  sound: Sound
+
+  constructor(ruletype) {
+    this.rules = RuleFactory.create(ruletype, null)
+    this.rules.tableGeometry()
+  }
+
+  loadFromWeb(ready) {
+    this.ready = ready
+    this.sound = new Sound(true)
+    importGltf("models/background.gltf", (m) => {
+      this.background = m.scene
+      this.done()
+    })
+    importGltf(this.rules.asset, (m) => {
+      this.table = m.scene
+      TableMesh.mesh = m.scene.children[0]
+      this.done()
+    })
+  }
+
+  createLocal() {
+    this.sound = new Sound(false)
+    TableMesh.mesh = new TableMesh().generateTable(TableGeometry.hasPockets)
+    this.table = TableMesh.mesh
+  }
+
+  static localAssets(ruletype = "") {
+    const assets = new Assets(ruletype)
+    assets.createLocal()
+    return assets
+  }
+
+  private done() {
+    if (this.background && this.table) {
+      this.ready()
+    }
+  }
+}
