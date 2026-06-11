@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中式八球 · 在线联机</title>
+  <link rel="icon" href="game/favicon.png">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      background: #0f1419;
+      color: #ecf0f1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      width: 100%;
+      max-width: 480px;
+      background: #1a2332;
+      border: 1px solid #243044;
+      border-radius: 12px;
+      padding: 28px;
+    }
+    h1 { margin: 0 0 6px; font-size: 1.4rem; color: #2ecc71; }
+    .sub { color: #95a5a6; font-size: 0.85rem; margin-bottom: 24px; }
+    label { display: block; font-size: 0.85rem; color: #bdc3c7; margin-bottom: 6px; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #34495e;
+      border-radius: 8px;
+      background: #0f1419;
+      color: #ecf0f1;
+      font-size: 1rem;
+      margin-bottom: 16px;
+    }
+    input:focus { outline: none; border-color: #3498db; }
+    .row { display: flex; gap: 10px; }
+    .row input { flex: 1; margin-bottom: 0; }
+    button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .btn-primary { background: #2ecc71; color: #0f1419; width: 100%; margin-top: 8px; }
+    .btn-primary:hover { background: #27ae60; }
+    .btn-secondary { background: #34495e; color: #ecf0f1; white-space: nowrap; }
+    .btn-secondary:hover { background: #3d566e; }
+    .divider {
+      text-align: center;
+      color: #7f8c8d;
+      font-size: 0.8rem;
+      margin: 20px 0;
+      position: relative;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 38%;
+      height: 1px;
+      background: #243044;
+    }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+    .link-box {
+      display: none;
+      margin-top: 20px;
+      padding: 14px;
+      background: #0f1419;
+      border-radius: 8px;
+      border: 2px solid #2ecc71;
+    }
+    .link-box.show { display: block; }
+    .room-badge {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 10px;
+      background: #243044;
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: #2ecc71;
+      font-weight: 600;
+    }
+    .enter-host {
+      margin-top: 10px;
+      background: #2ecc71;
+      color: #0f1419;
+      width: 100%;
+    }
+    .enter-host:hover { background: #27ae60; }
+    .link-box p { margin: 0 0 8px; font-size: 0.85rem; color: #95a5a6; }
+    .link-text {
+      word-break: break-all;
+      font-size: 0.8rem;
+      color: #3498db;
+      line-height: 1.5;
+    }
+    .copy-btn {
+      margin-top: 10px;
+      background: #3498db;
+      color: #fff;
+      width: 100%;
+    }
+    .copy-btn:hover { background: #2980b9; }
+    .tips {
+      margin-top: 24px;
+      padding-top: 16px;
+      border-top: 1px solid #243044;
+      font-size: 0.78rem;
+      color: #7f8c8d;
+      line-height: 1.6;
+    }
+    .tips a { color: #3498db; }
+    .back { display: inline-block; margin-bottom: 16px; color: #3498db; text-decoration: none; font-size: 0.85rem; }
+    .back:hover { text-decoration: underline; }
+    .warn {
+      display: none;
+      margin-bottom: 16px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: #3d2a1a;
+      border: 1px solid #e67e22;
+      color: #f5cba7;
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+    .warn.show { display: block; }
+    .link-text a { color: #3498db; }
+    .hint { font-size: 0.78rem; color: #7f8c8d; margin: -8px 0 16px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <a class="back" href="index.html">← 返回单机</a>
+    <h1>中式八球 · 在线联机</h1>
+    <p class="sub">创建房间后把链接发给朋友，两人同时进入即可对战</p>
+
+    <div class="warn" id="file-warn">
+      请勿直接双击打开 html 文件。请先在终端运行
+      <code>python3 -m http.server 8765</code>，
+      再用浏览器访问 <code>http://本机IP:8765/online.html</code>。
+    </div>
+    <div class="warn" id="localhost-warn">
+      你正在用 localhost 访问。<strong>localhost 链接别人打不开</strong>。
+      请把下面「分享地址」改成你的局域网 IP（如 192.168.x.x），或直接用自动检测到的地址。
+    </div>
+
+    <div id="share-host-section">
+      <label for="share-host">分享地址（发给朋友用这个）</label>
+      <input id="share-host" type="text" placeholder="正在检测局域网 IP…">
+      <p class="hint">同一 WiFi 下填你的局域网 IP；已部署公网后会自动使用当前网址</p>
+    </div>
+
+    <label for="name">你的昵称</label>
+    <input id="name" type="text" placeholder="例如：小明" maxlength="20" autocomplete="nickname">
+
+    <label for="room">房间号</label>
+    <div class="row">
+      <input id="room" type="text" placeholder="留空则自动生成" maxlength="16" pattern="[a-zA-Z0-9_-]+">
+      <button type="button" class="btn-secondary" id="gen-room">随机</button>
+    </div>
+
+    <button type="button" class="btn-primary" id="create">创建房间（房主）</button>
+
+    <div class="divider">或</div>
+
+    <button type="button" class="btn-primary" id="join" style="background:#3498db">加入房间（客人）</button>
+
+    <div class="link-box" id="invite-box">
+      <p><strong style="color:#2ecc71">房间已创建</strong></p>
+      <div class="room-badge">房间号：<span id="room-display"></span></div>
+      <p>把下面链接发给对手，全球可访问（已部署公网时）：</p>
+      <div class="link-text" id="invite-link"></div>
+      <p class="hint" style="margin-top:8px">对方打开链接 → 填昵称 → 点「加入房间」</p>
+      <button type="button" class="copy-btn" id="copy">复制邀请链接</button>
+      <button type="button" class="enter-host" id="enter-host">我准备好了，进入球台（房主）</button>
+    </div>
+
+    <div class="tips">
+      <strong>说明</strong><br>
+      · 房主先进入，看到「等待对手加入」；客人加入后房主自动开球<br>
+      · 客人进入后请等待房主开球，轮到你时右下角「击球」按钮会亮起<br>
+      · 必须两人都进入同一房间才能开始，单人进房无法击球<br>
+      · 消息经公共中继服务器转发（<code>billiards-network.onrender.com</code>）<br>
+      · 局域网联机：先运行 <code>python3 -m http.server 8765</code>，用 <code>http://你的IP:8765/online.html</code> 打开<br>
+      · 外网联机：需部署到 GitHub Pages 等公网地址，不能只发 localhost 链接<br>
+      · 操作：方向键瞄准/高低杆/侧旋，空格蓄力击球
+    </div>
+  </div>
+
+  <script>
+    // 本地开发也用公共中继，否则 ws://localhost 无服务会导致永远连不上
+    const WSS = 'wss://billiards-network.onrender.com'
+
+    const nameEl = document.getElementById('name')
+    const roomEl = document.getElementById('room')
+    const shareHostEl = document.getElementById('share-host')
+    const inviteBox = document.getElementById('invite-box')
+    const inviteLink = document.getElementById('invite-link')
+    const roomDisplay = document.getElementById('room-display')
+    const enterHostBtn = document.getElementById('enter-host')
+    let pendingHostUrl = ''
+    let pendingRoom = ''
+
+    const savedName = localStorage.getItem('c8ball_name')
+    if (savedName) nameEl.value = savedName
+
+    const basePath = location.pathname.replace(/\/[^/]*$/, '/')
+    const port = location.port || (location.protocol === 'https:' ? '443' : '80')
+    const isLocalhost =
+      location.hostname === 'localhost' || location.hostname === '127.0.0.1'
+    const isFile = location.protocol === 'file:'
+    const isPublic = !isFile && !isLocalhost
+
+    if (isFile) {
+      document.getElementById('file-warn').classList.add('show')
+    } else if (isLocalhost) {
+      document.getElementById('localhost-warn').classList.add('show')
+    } else {
+      document.getElementById('share-host-section').hidden = true
+    }
+
+    function randomRoom() {
+      return Math.random().toString(36).slice(2, 8)
+    }
+
+    function saveName() {
+      const n = nameEl.value.trim()
+      if (n) localStorage.setItem('c8ball_name', n)
+      return n || '玩家'
+    }
+
+    function shareOrigin() {
+      if (isPublic) {
+        return `${location.origin}${basePath}`
+      }
+      const host = shareHostEl.value.trim()
+      if (!host) return null
+      const proto = location.protocol === 'https:' ? 'https:' : 'http:'
+      const portPart =
+        (proto === 'http:' && port === '80') || (proto === 'https:' && port === '443')
+          ? ''
+          : `:${port}`
+      return `${proto}//${host}${portPart}${basePath}`
+    }
+
+    function gameUrl(opts) {
+      const params = new URLSearchParams({
+        ruletype: 'chinese8ball',
+        lod: '3',
+        websocketserver: WSS,
+        tableId: opts.room,
+        userId: opts.userId,
+        userName: opts.userName,
+      })
+      if (opts.first) params.set('first', 'true')
+      return `${basePath}game/index.html?${params.toString()}`
+    }
+
+    function inviteUrl(room) {
+      const origin = shareOrigin()
+      if (!origin) return ''
+      return `${origin}online.html?join=${encodeURIComponent(room)}`
+    }
+
+    function renderInviteLink(room) {
+      pendingRoom = room
+      const url = inviteUrl(room)
+      if (!url) {
+        inviteLink.innerHTML =
+          '<span style="color:#e74c3c">请先填写上方的「分享地址」</span>'
+        return
+      }
+      inviteLink.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${url}</a>`
+    }
+
+    async function detectLanIp() {
+      if (!isLocalhost) {
+        shareHostEl.value = location.hostname
+        return
+      }
+      const saved = localStorage.getItem('c8ball_share_host')
+      if (saved) {
+        shareHostEl.value = saved
+        return
+      }
+      try {
+        const ip = await new Promise((resolve) => {
+          const pc = new RTCPeerConnection({ iceServers: [] })
+          let found = false
+          pc.createDataChannel('x')
+          pc.onicecandidate = (e) => {
+            if (!e.candidate || found) return
+            const m = /(\d+\.\d+\.\d+\.\d+)/.exec(e.candidate.candidate || '')
+            if (m && !m[1].startsWith('127.') && !m[1].endsWith('.0.1')) {
+              found = true
+              resolve(m[1])
+              pc.close()
+            }
+          }
+          pc.createOffer().then((o) => pc.setLocalDescription(o))
+          setTimeout(() => resolve(null), 2500)
+        })
+        if (ip) shareHostEl.value = ip
+        else shareHostEl.placeholder = '例如 192.168.1.100'
+      } catch {
+        shareHostEl.placeholder = '例如 192.168.1.100'
+      }
+    }
+
+    shareHostEl.addEventListener('change', () => {
+      localStorage.setItem('c8ball_share_host', shareHostEl.value.trim())
+      if (pendingRoom) renderInviteLink(pendingRoom)
+    })
+    shareHostEl.addEventListener('input', () => {
+      if (pendingRoom) renderInviteLink(pendingRoom)
+    })
+
+    detectLanIp()
+
+    document.getElementById('gen-room').onclick = () => {
+      roomEl.value = randomRoom()
+    }
+
+    document.getElementById('create').onclick = () => {
+      const name = saveName()
+      const room = roomEl.value.trim() || randomRoom()
+      roomEl.value = room
+      pendingHostUrl = gameUrl({
+        room,
+        userId: 'host_' + Math.random().toString(36).slice(2, 10),
+        userName: name,
+        first: true,
+      })
+      roomDisplay.textContent = room
+      renderInviteLink(room)
+      inviteBox.classList.add('show')
+      inviteBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      document.getElementById('create').textContent = '重新创建房间'
+    }
+
+    enterHostBtn.onclick = () => {
+      if (!pendingHostUrl) return
+      if (isFile) {
+        alert('请用 http.server 启动后再进入游戏')
+        return
+      }
+      location.href = pendingHostUrl
+    }
+
+    document.getElementById('join').onclick = () => {
+      const name = saveName()
+      const room = roomEl.value.trim()
+      if (!room) {
+        alert('请输入房间号')
+        roomEl.focus()
+        return
+      }
+      const url = gameUrl({
+        room,
+        userId: 'guest_' + Math.random().toString(36).slice(2, 10),
+        userName: name,
+        first: false,
+      })
+      location.href = url
+    }
+
+    document.getElementById('copy').onclick = async () => {
+      const url = inviteUrl(pendingRoom)
+      if (!url) {
+        alert('请先填写「分享地址」')
+        shareHostEl.focus()
+        return
+      }
+      try {
+        await navigator.clipboard.writeText(url)
+        document.getElementById('copy').textContent = '已复制'
+        setTimeout(() => { document.getElementById('copy').textContent = '复制邀请链接' }, 2000)
+      } catch {
+        prompt('复制此链接：', url)
+      }
+    }
+
+    const urlParams = new URLSearchParams(location.search)
+    const joinRoom = urlParams.get('join')
+    if (joinRoom) {
+      roomEl.value = joinRoom
+      nameEl.focus()
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+[build]
+  command = "chmod +x build.sh deploy.sh && ./deploy.sh"
+  publish = "public"
+
+[build.environment]
+  NODE_VERSION = "22"

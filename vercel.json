@@ -1,0 +1,5 @@
+{
+  "buildCommand": "chmod +x build.sh deploy.sh && ./deploy.sh",
+  "outputDirectory": "public",
+  "installCommand": "cd vendor/tailuge-billiards && npm install --ignore-scripts"
+}
