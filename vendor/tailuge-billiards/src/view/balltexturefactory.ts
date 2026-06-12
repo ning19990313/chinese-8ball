@@ -1,4 +1,4 @@
-import { CanvasTexture, Color, LinearFilter, SRGBColorSpace } from "three"
+import { CanvasTexture, Color, LinearFilter } from "three"
 import { chineseBallColor } from "../utils/ballcolors"
 
 export class BallTextureFactory {
@@ -6,10 +6,10 @@ export class BallTextureFactory {
 
   static getOrCreateTexture(
     label: number,
-    _color: Color,
-    size = 512
+    color: Color,
+    size = 256
   ): CanvasTexture {
-    const key = `v4_${label}_${size}`
+    const key = `${label}_${color.getHex()}_${size}`
     if (this.textureCache.has(key)) {
       return this.textureCache.get(key)!
     }
@@ -38,11 +38,9 @@ export class BallTextureFactory {
       ctx.fillStyle = "#000000"
       ctx.fillRect(0, 0, size, size)
     } else if (label >= 1) {
-      // 全色/花色先铺彩色底
       ctx.fillStyle = ballColor
       ctx.fillRect(0, 0, size, size)
       if (label >= 9) {
-        // 花色球：贴图上下加白条（经球面投影后正面为白+彩条）
         const cap = size * 0.2
         ctx.fillStyle = "#ffffff"
         ctx.fillRect(0, 0, size, cap)
@@ -83,10 +81,10 @@ export class BallTextureFactory {
 
     const texture = new CanvasTexture(canvas)
     texture.flipY = false
-    texture.colorSpace = SRGBColorSpace
-    texture.generateMipmaps = false
+    texture.generateMipmaps = true
     texture.minFilter = LinearFilter
     texture.magFilter = LinearFilter
+    texture.needsUpdate = true
     return texture
   }
 }

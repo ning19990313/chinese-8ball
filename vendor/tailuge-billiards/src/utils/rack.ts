@@ -2,7 +2,7 @@ import { Ball, State } from "../model/ball"
 import { SnookerConfig } from "./snookerconfig"
 import { TableGeometry } from "../view/tablegeometry"
 import { PocketGeometry } from "../view/pocketgeometry"
-import { Vector3 } from "three"
+import { Vector3, Color } from "three"
 import { roundVec, vec } from "./three-utils"
 import { R } from "../model/physics/constants"
 import { Session } from "../network/client/session"
@@ -76,12 +76,8 @@ export class Rack {
 
   /** 中式八球目标球 1–15（带号码） */
   static chineseObjectBall(pos, label: number) {
-    return new Ball(
-      Rack.jitter(pos),
-      chineseBallColor(label),
-      label,
-      "projected"
-    )
+    const hex = new Color(chineseBallColor(label)).getHex()
+    return new Ball(Rack.jitter(pos), hex, label, "projected")
   }
 
   static swapBallPositions(b1: Ball, b2: Ball) {

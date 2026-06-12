@@ -4,6 +4,7 @@ import {
   MeshPhysicalMaterial,
   MeshStandardMaterial,
 } from "three"
+import { R } from "../model/physics/constants"
 import { BallTextureFactory } from "./balltexturefactory"
 import { BallCubeTextureFactory } from "./ballcubetexturefactory"
 import { Session } from "../network/client/session"
@@ -94,13 +95,12 @@ export class BallMaterialFactory {
     return material
   }
 
-  /** 使用 map 贴图（不用自定义着色器），避免球体全黑 */
   static createProjectedMaterial(
     label: number,
     color: Color,
-    size = 512
+    size = 256
   ): MeshStandardMaterial | MeshPhysicalMaterial {
-    const key = `projected_map_${label}_${size}`
+    const key = `projected_${label}_${color.getHex()}_${size}`
     if (this.materialCache.has(key)) {
       return this.materialCache.get(key) as
         | MeshStandardMaterial
@@ -116,20 +116,62 @@ export class BallMaterialFactory {
     const material =
       Session.getLod() <= 1
         ? new MeshStandardMaterial({
-            map: numberTexture,
-            color: 0xffffff,
-            roughness: 0.45,
+            color: color,
+            roughness: 0.5,
             metalness: 0,
+            flatShading: true,
+            transparent: false,
+            depthWrite: true,
           })
         : new MeshPhysicalMaterial({
-            map: numberTexture,
-            color: 0xffffff,
-            roughness: 0.18,
+            color: color,
+            roughness: 0.1,
             metalness: 0,
-            clearcoat: 0.55,
-            clearcoatRoughness: 0.06,
+            clearcoat: 1.0,
+            clearcoatRoughness: 0.02,
+            reflectivity: 0.25,
           })
 
+    material.onBeforeCompile = (shader: any) => {
+      shader.uniforms.numberTex = { value: numberTexture }
+      shader.uniforms.invScale = { value: 1 / (R * 2) }
+
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <common>",
+        `#include <common>
+         varying vec3 vLocalPosition;`
+      )
+      shader.vertexShader = shader.vertexShader.replace(
+        "#include <begin_vertex>",
+        `#include <begin_vertex>
+         vLocalPosition = position;`
+      )
+
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <common>",
+        `#include <common>
+        uniform sampler2D numberTex;
+        uniform float invScale;
+        varying vec3 vLocalPosition;`
+      )
+      shader.fragmentShader = shader.fragmentShader.replace(
+        "#include <color_fragment>",
+        `#include <color_fragment>
+        vec2 projUv = vLocalPosition.xz * invScale + 0.5;
+        vec2 dx = dFdx(projUv);
+        vec2 dy = dFdy(projUv);
+        if (vLocalPosition.y < 0.0) {
+          projUv.x = 1.0 - projUv.x;
+          dx.x = -dx.x;
+          dy.x = -dy.x;
+        }
+        projUv = clamp(projUv, 0.0, 1.0);
+        vec4 texColor = textureGrad(numberTex, projUv, dx * 0.5, dy * 0.5);
+        diffuseColor.rgb = texColor.rgb;`
+      )
+    }
+
+    material.customProgramCacheKey = () => key
     this.materialCache.set(key, material)
     return material
   }

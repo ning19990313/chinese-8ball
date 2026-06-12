@@ -24,7 +24,6 @@ import { BallAppearance } from "./ballappearance"
 
 export class BallMesh {
   private static _ballGeometry: IcosahedronGeometry
-  private static _projectedBallGeometry: IcosahedronGeometry
   private static _shadowGeometry: CircleGeometry
   private static _shadowMaterial: MeshBasicMaterial
   private static readonly _dottedGeometryCache = new Map<
@@ -40,32 +39,6 @@ export class BallMesh {
       )
     }
     return this._ballGeometry
-  }
-
-  /** 球面 UV 与旧版投影着色器一致，供 map 贴图使用 */
-  private static getProjectedBallGeometry() {
-    if (!this._projectedBallGeometry) {
-      const geom = new IcosahedronGeometry(
-        R,
-        Math.max(1, Session.getLod())
-      )
-      const invScale = 1 / (R * 2)
-      const pos = geom.attributes.position
-      const uv = new Float32Array(pos.count * 2)
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i)
-        const y = pos.getY(i)
-        const z = pos.getZ(i)
-        let u = x * invScale + 0.5
-        const v = z * invScale + 0.5
-        if (y < 0) u = 1.0 - u
-        uv[i * 2] = Math.max(0, Math.min(1, u))
-        uv[i * 2 + 1] = Math.max(0, Math.min(1, v))
-      }
-      geom.setAttribute("uv", new BufferAttribute(uv, 2))
-      this._projectedBallGeometry = geom
-    }
-    return this._projectedBallGeometry
   }
 
   private static getShadowGeometry() {
@@ -174,7 +147,7 @@ export class BallMesh {
       if (label === undefined) {
         throw new Error("Projected ball material requires a label")
       }
-      geometry = BallMesh.getProjectedBallGeometry()
+      geometry = BallMesh.getBallGeometry()
       material = BallMaterialFactory.createProjectedMaterial(label, color)
     }
     this.mesh = new Mesh(geometry, material)

@@ -38,6 +38,9 @@ cat > "$PUBLIC/404.html" <<'EOF'
 </html>
 EOF
 
+# 游戏 bundle 加版本号，避免浏览器缓存旧 index.js
+sed -i "s|src=\"index.js\"|src=\"index.js?v=${BUILD_STAMP}\"|g" "$PUBLIC/game/index.html"
+
 # 写入构建戳，便于确认是否加载到最新页面
 for page in index.html online.html; do
   sed -i "1s|<!DOCTYPE html>|<!DOCTYPE html>\n<!-- build:${BUILD_STAMP} -->|" "$PUBLIC/$page"
