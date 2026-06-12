@@ -32,15 +32,17 @@ export class BallTextureFactory {
       return new CanvasTexture(canvas)
     }
 
-    // Background
-    ctx.fillStyle = `#${color.getHexString()}`
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    // Stripes for Nineball (9-15)
-    if (label >= 9) {
-      ctx.fillStyle = "white"
-      ctx.fillRect(0, 0, size, size * 0.2)
-      ctx.fillRect(0, size * 0.8, size, size * 0.2)
+    if (label === 8) {
+      ctx.fillStyle = "#000000"
+      ctx.fillRect(0, 0, size, size)
+    } else if (label >= 9) {
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(0, 0, size, size)
+      ctx.fillStyle = `#${color.getHexString()}`
+      ctx.fillRect(0, size * 0.26, size, size * 0.48)
+    } else {
+      ctx.fillStyle = `#${color.getHexString()}`
+      ctx.fillRect(0, 0, size, size)
     }
 
     if (label > 0) {
@@ -49,19 +51,16 @@ export class BallTextureFactory {
       const radius = Math.round(52 * scale)
       const border = Math.round(15 * scale)
 
-      // Black circle (border)
       ctx.beginPath()
       ctx.arc(centerX, centerY, radius + border, 0, Math.PI * 2)
       ctx.fillStyle = "black"
       ctx.fill()
 
-      // White circle
       ctx.beginPath()
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
       ctx.fillStyle = "white"
       ctx.fill()
 
-      // Number
       ctx.fillStyle = "black"
       ctx.strokeStyle = "black"
       const fontSize = Math.round(97 * scale)

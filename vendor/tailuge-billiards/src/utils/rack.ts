@@ -25,21 +25,21 @@ export class Rack {
 
   static readonly BALL_COLORS = [
     "#FFFFFF", // 0: Cue Ball
-    "#ffd900", // 1: Yellow
-    "#0000FF", // 2: Blue
-    "#FF0000", // 3: Red
-    "#800080", // 4: Purple
-    "#ff3300", // 5: Orange
-    "#008000", // 6: Green
-    "#600000", // 7: Maroon
-    "#000000", // 8: Black
-    "#FFFF00", // 9: Yellow (Striped)
-    "#0000FF", // 10: Blue (Striped)
-    "#FF0000", // 11: Red (Striped)
-    "#800080", // 12: Purple (Striped)
-    "#FF8000", // 13: Orange (Striped)
-    "#008000", // 14: Green (Striped)
-    "#600000", // 15: Maroon (Striped)
+    "#FFD700", // 1: 全色 黄
+    "#0044CC", // 2: 全色 蓝
+    "#DD0000", // 3: 全色 红
+    "#FF69B4", // 4: 全色 粉
+    "#FF6600", // 5: 全色 橙
+    "#008833", // 6: 全色 绿
+    "#8B0000", // 7: 全色 棕
+    "#000000", // 8: 黑
+    "#FFD700", // 9: 花色 黄
+    "#0044CC", // 10: 花色 蓝
+    "#DD0000", // 11: 花色 红
+    "#FF69B4", // 12: 花色 粉
+    "#FF6600", // 13: 花色 橙
+    "#008833", // 14: 花色 绿
+    "#8B0000", // 15: 花色 棕
   ]
   private static jitter(pos) {
     return roundVec(

@@ -1,6 +1,6 @@
-/** 专属球杆：仅 lpr 粉色；其他玩家使用默认球杆 */
+/** 专属球杆配色（仅特殊昵称生效，其余默认球杆） */
 window.C8BALL_SPECIAL_CUE = {
-  lpr: { cueColor: 'ff69b4', label: '粉色球杆' },
+  lpr: { cueColor: 'ff69b4' },
 }
 
 window.c8ballNormalizeName = function (name) {
