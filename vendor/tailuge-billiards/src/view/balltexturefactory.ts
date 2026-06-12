@@ -35,14 +35,17 @@ export class BallTextureFactory {
     if (label === 8) {
       ctx.fillStyle = "#000000"
       ctx.fillRect(0, 0, size, size)
-    } else if (label >= 9) {
-      ctx.fillStyle = "#ffffff"
-      ctx.fillRect(0, 0, size, size)
-      ctx.fillStyle = `#${color.getHexString()}`
-      ctx.fillRect(0, size * 0.26, size, size * 0.48)
     } else {
       ctx.fillStyle = `#${color.getHexString()}`
       ctx.fillRect(0, 0, size, size)
+    }
+
+    // 9–15 花色球：彩色底 + 上下白色条纹（与全色球区分，侧面看仍是大块彩色）
+    if (label >= 9) {
+      const cap = size * 0.21
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(0, 0, size, cap)
+      ctx.fillRect(0, size - cap, size, cap)
     }
 
     if (label > 0) {
