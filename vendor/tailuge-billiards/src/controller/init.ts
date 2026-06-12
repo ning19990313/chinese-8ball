@@ -10,6 +10,7 @@ import { Session } from "../network/client/session"
 import { Spectate } from "./spectate"
 import { NchanMessageRelay } from "../network/client/nchanmessagerelay"
 import { Aim } from "./aim"
+import { isFirstShot } from "../utils/utils"
 
 /**
  * Initial state of controller.
@@ -53,6 +54,15 @@ export class Init extends ControllerBase {
     if (Session.isPracticeMode() && Session.hasInitParam()) {
       this.container.table.cueball.fround()
       this.container.sound.playNotify()
+      this.container.sendEvent(
+        new BreakEvent(this.container.table.shortSerialise())
+      )
+      return new Aim(this.container)
+    }
+    if (
+      this.container.rules.rulename === "chinese8ball" &&
+      isFirstShot(this.container.recorder)
+    ) {
       this.container.sendEvent(
         new BreakEvent(this.container.table.shortSerialise())
       )

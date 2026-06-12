@@ -78,6 +78,23 @@ export class BallMaterialFactory {
     return material
   }
 
+  static createCueBallMaterial(): MeshPhysicalMaterial {
+    const key = "cue_white"
+    if (this.materialCache.has(key)) {
+      return this.materialCache.get(key) as MeshPhysicalMaterial
+    }
+    const material = new MeshPhysicalMaterial({
+      color: 0xffffff,
+      roughness: 0.08,
+      metalness: 0,
+      clearcoat: 1.0,
+      clearcoatRoughness: 0.03,
+      reflectivity: 0.3,
+    })
+    this.materialCache.set(key, material)
+    return material
+  }
+
   static createProjectedMaterial(
     label: number,
     color: Color,

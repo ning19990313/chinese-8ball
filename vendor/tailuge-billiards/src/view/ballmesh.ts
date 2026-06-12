@@ -140,6 +140,9 @@ export class BallMesh {
     } else if (effectiveAppearance === "texturedDots") {
       geometry = BallMesh.getBallGeometry()
       material = BallMaterialFactory.createTexturedDotsMaterial(color)
+    } else if (effectiveAppearance === "cue") {
+      geometry = BallMesh.getBallGeometry()
+      material = BallMaterialFactory.createCueBallMaterial()
     } else {
       if (label === undefined) {
         throw new Error("Projected ball material requires a label")

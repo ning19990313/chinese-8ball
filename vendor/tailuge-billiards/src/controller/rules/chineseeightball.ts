@@ -8,15 +8,23 @@ import { Rack } from "../../utils/rack"
 import { isFirstShot } from "../../utils/utils"
 import {
   applyChineseTableGeometry,
+  CHINESE_FOOT_SPOT,
   CHINESE_HEAD_STRING,
 } from "../../utils/chinese-table"
 import { TableGeometry } from "../../view/tablegeometry"
 import { EightBall } from "./eightball"
 import { Aim } from "../aim"
 import { WatchAim } from "../watchaim"
+import { PlaceBall } from "../placeball"
+import { Controller } from "../controller"
 import { ScoreEvent } from "../../events/scoreevent"
 import { WatchEvent } from "../../events/watchevent"
 import { StartAimEvent } from "../../events/startaimevent"
+import { PlaceBallEvent } from "../../events/placeballevent"
+import { RerackEvent } from "../../events/rerackevent"
+import { Respot } from "../../utils/respot"
+import { roundVec } from "../../utils/three-utils"
+import { R } from "../../model/physics/constants"
 
 const flipType = (t: number) => {
   if (t === 1) return 2
@@ -29,6 +37,10 @@ const flipType = (t: number) => {
  */
 export class ChineseEightBall extends EightBall {
   override rulename = "chinese8ball"
+  /** 开球犯规后：主球只能摆在开球线后 */
+  lineBallOnly = false
+  /** 线后自由球：只能击打开球线顶边侧的目标球 */
+  lineBallRestriction = false
 
   override tableGeometry(): void {
     applyChineseTableGeometry()
@@ -54,12 +66,34 @@ export class ChineseEightBall extends EightBall {
     if (target) {
       const max = new Vector3(TableGeometry.tableX, TableGeometry.tableY)
       const min = new Vector3(-TableGeometry.tableX, -TableGeometry.tableY)
-      if (isFirstShot(this.container.recorder)) {
+      if (
+        this.lineBallOnly ||
+        isFirstShot(this.container.recorder)
+      ) {
         max.setX(CHINESE_HEAD_STRING)
       }
       return target.clone().clamp(min, max)
     }
+    if (this.lineBallOnly) {
+      return new Vector3(CHINESE_HEAD_STRING - R * 2, 0, 0)
+    }
     return new Vector3(CHINESE_HEAD_STRING, 0, 0)
+  }
+
+  private clearLineBallState() {
+    this.lineBallOnly = false
+    this.lineBallRestriction = false
+  }
+
+  private respotEightAtFoot() {
+    const table = this.container.table
+    const eightBall = table.balls.find((b) => b.label === 8)!
+    const footSpot = new Vector3(CHINESE_FOOT_SPOT, 0, 0)
+    Respot.respotBehind(footSpot, eightBall, table)
+    eightBall.fround()
+    this.container.sendEvent(
+      RerackEvent.fromJson({ balls: [eightBall.serialise()] })
+    )
   }
 
   private isMyGroup(ball: Ball, type: number): boolean {
@@ -137,6 +171,13 @@ export class ChineseEightBall extends EightBall {
     const hitBall = firstCollision.ballB!
     const required = this.getRequiredObjectBall(type)
     const effectiveType = type ?? Session.getInstance().p1type
+
+    if (
+      this.lineBallRestriction &&
+      hitBall.pos.x <= CHINESE_HEAD_STRING
+    ) {
+      return "线后自由球：须击打开球线顶边侧的目标球"
+    }
 
     if (this.isBreakShot()) {
       if (hitBall.label !== 1) {
@@ -254,7 +295,51 @@ export class ChineseEightBall extends EightBall {
     return myGroup.length === 0
   }
 
+  protected override handleFoul(
+    outcome: Outcome[],
+    reason: string
+  ): Controller {
+    this.container.notify({
+      type: "Foul",
+      title: "犯规",
+      subtext: reason,
+      extra: this.isBreakShot() ? "对方线后自由球" : "对方自由球",
+    })
+    this.startTurn()
+    const wasBreak = this.isBreakShot()
+    this.lineBallOnly = wasBreak
+    this.lineBallRestriction = wasBreak
+
+    const pots = Outcome.pots(outcome)
+    const eightBallPotted = pots.some((b) => b.label === 8)
+    const cueball = this.container.table.cueball
+
+    if (eightBallPotted) {
+      const session = Session.getInstance()
+      const hasGroupBalls = this.container.table.balls.some(
+        (b) => b !== cueball && b.label !== 8 && b.onTable()
+      )
+      if (session.p1type !== 0 && hasGroupBalls) {
+        this.respotEightAtFoot()
+      } else {
+        return this.handleGameEnd(false, "犯规打进 8 号球，判负")
+      }
+    }
+
+    const startPos = cueball.onTable()
+      ? cueball.pos.clone()
+      : this.placeBall()
+    roundVec(startPos)
+    this.container.sendEvent(new PlaceBallEvent(startPos, undefined, true))
+
+    if (this.container.isSinglePlayer) {
+      return new PlaceBall(this.container, startPos)
+    }
+    return new WatchAim(this.container)
+  }
+
   protected override handlePot(outcome: Outcome[]): Controller {
+    this.clearLineBallState()
     const session = Session.getInstance()
     const table = this.container.table
     const pots = Outcome.pots(outcome)
@@ -263,7 +348,17 @@ export class ChineseEightBall extends EightBall {
       if (this.isEndOfGame(outcome)) {
         return this.handleGameEnd(true, "合法打进 8 号球，获胜！")
       }
-      return this.handleGameEnd(false, "未清台误进 8 号球，判负")
+      if (this.isBreakShot()) {
+        this.respotEightAtFoot()
+        this.container.notify({
+          type: "Info",
+          title: "开球进 8 号",
+          subtext: "8 号重置于置球点，继续击球",
+          duration: 4000,
+        })
+      } else {
+        return this.handleGameEnd(false, "未清台误进 8 号球，判负")
+      }
     }
 
     const typeBefore = session.p1type
@@ -291,10 +386,10 @@ export class ChineseEightBall extends EightBall {
     const myType = this.myGroupType(session)
     const pottedMyBall =
       myType !== 0 && pots.some((b) => this.isMyGroup(b, myType))
-    const openTablePot =
+    const openTableContinue =
       typeBefore === 0 && pots.some((b) => b.label && b.label !== 8)
 
-    if (pottedMyBall || openTablePot) {
+    if (pottedMyBall || openTableContinue) {
       return new Aim(this.container)
     }
 
@@ -302,6 +397,7 @@ export class ChineseEightBall extends EightBall {
   }
 
   protected override handleMiss(): Controller {
+    this.clearLineBallState()
     const table = this.container.table
     this.container.sendEvent(new StartAimEvent())
     if (this.container.isSinglePlayer) {

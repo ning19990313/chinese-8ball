@@ -68,6 +68,21 @@ export class Rack {
     )
   }
 
+  /** 中式八球主球（白球） */
+  static chineseCueBall(pos) {
+    return new Ball(Rack.jitter(pos), 0xffffff, undefined, "cue")
+  }
+
+  /** 中式八球目标球 1–15（带号码） */
+  static chineseObjectBall(pos, label: number) {
+    return new Ball(
+      Rack.jitter(pos),
+      Rack.BALL_COLORS[label],
+      label,
+      "projected"
+    )
+  }
+
   static swapBallPositions(b1: Ball, b2: Ball) {
     const temp = b1.pos.clone()
     b1.pos.copy(b2.pos)
@@ -269,23 +284,17 @@ export class Rack {
   }
 
   static chineseEightBall() {
-    const triangle = this.chineseTriangle()
-    Rack.swapBallPositions(triangle[4], triangle[9])
-    Rack.swapBallPositions(triangle[4], triangle[8])
-    Rack.swapBallPositions(triangle[3], triangle[11])
-    Rack.swapBallPositions(triangle[6], triangle[14])
-    return triangle
-  }
-
-  static chineseTriangle() {
+    // 全色/花色间隔摆放，8 号在第三排中间，1 号在置球点
+    const labels = [1, 9, 2, 10, 8, 3, 11, 4, 12, 5, 13, 6, 14, 7, 15]
     const tp = Rack.chineseTrianglePositions()
     const triangle: Ball[] = []
     triangle.push(
-      Rack.cueBall(Rack.jitter(new Vector3(CHINESE_HEAD_STRING, 0, 0)))
+      Rack.chineseCueBall(
+        Rack.jitter(new Vector3(CHINESE_HEAD_STRING, 0, 0))
+      )
     )
     tp.forEach((p, i) => {
-      const label = i + 1
-      triangle.push(new Ball(Rack.jitter(p), Rack.BALL_COLORS[label], label))
+      triangle.push(Rack.chineseObjectBall(p, labels[i]))
     })
     return triangle
   }
