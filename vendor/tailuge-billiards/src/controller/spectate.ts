@@ -86,6 +86,9 @@ export class Spectate extends ControllerBase {
     this.container.table.cue.aim = event
     this.container.table.cueball = this.container.table.balls[event.i]
     this.container.table.cueball.pos.copy(event.pos)
+    if (event.cueColor !== undefined) {
+      this.container.table.cue.setPaletteFromColor(event.cueColor)
+    }
     this.container.table.cue.updateAimInput()
     return this
   }

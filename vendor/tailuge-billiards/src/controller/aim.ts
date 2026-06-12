@@ -61,6 +61,7 @@ export class Aim extends ControllerBase {
   }
 
   override onFirst() {
+    this.container.table.cue.applyMyPalette()
     this.container.table.cue.aimInputs.setDisabled(false)
   }
 
@@ -77,7 +78,9 @@ export class Aim extends ControllerBase {
         }
     }
 
-    this.container.sendEvent(this.container.table.cue.aim)
+    const aim = this.container.table.cue.aim
+    this.container.table.cue.stampAimColor(aim)
+    this.container.sendEvent(aim)
     return this
   }
 

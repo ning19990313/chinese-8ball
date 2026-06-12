@@ -71,7 +71,9 @@ export class PlaceBall extends ControllerBase {
 
     this.container.table.cue.moveTo(ballPos)
     this.container.view.camera.forceMove(this.container.table.cue.aim)
-    this.container.sendEvent(this.container.table.cue.aim)
+    const aim = this.container.table.cue.aim
+    this.container.table.cue.stampAimColor(aim)
+    this.container.sendEvent(aim)
 
     return this
   }

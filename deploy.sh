@@ -12,7 +12,7 @@ rm -rf "$PUBLIC"
 mkdir -p "$PUBLIC"
 
 cp "$ROOT/index.html" "$ROOT/online.html" "$ROOT/NOTICE.md" "$PUBLIC/"
-cp -r "$ROOT/css" "$PUBLIC/"
+cp -r "$ROOT/css" "$ROOT/js" "$PUBLIC/"
 cp -r "$GAME_SRC" "$PUBLIC/game"
 
 # 静态托管不支持符号链接，必须用真实目录

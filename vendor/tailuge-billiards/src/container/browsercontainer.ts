@@ -27,6 +27,8 @@ import {
   applyPhysicsParams,
   applyChinesePhysicsDefaults,
 } from "../utils/physicsparams"
+import { parseCueColor } from "../utils/cuecolor"
+import { c8ballPlayerConfig } from "../utils/c8ball-players"
 
 /**
  * Integrate game container into HTML page
@@ -82,6 +84,7 @@ export class BrowserContainer {
     this.botMode = params.has("bot")
     this.botName = params.get("bot") ?? ""
     this.practiceMode = params.has("practice")
+
     SnookerConfig.reds = Number.parseInt(params.get("reds") ?? "15") || 15
     const defaultThreeCushionRaceTo =
       this.practiceMode && this.ruletype === "threecushion" ? "50" : "7"
@@ -104,6 +107,15 @@ export class BrowserContainer {
     console.log(Session.getInstance())
     applyPhysicsParams(params)
     applyChinesePhysicsDefaults(this.ruletype, params)
+    const urlCue = parseCueColor(params.get("cueColor"))
+    if (urlCue !== undefined) {
+      Session.getInstance().cueColor = urlCue
+    } else if (this.ruletype === "chinese8ball") {
+      const cfg = c8ballPlayerConfig(this.playername)
+      if (cfg) {
+        Session.getInstance().cueColor = parseCueColor(cfg.cueColor)
+      }
+    }
   }
 
   cushion(model) {

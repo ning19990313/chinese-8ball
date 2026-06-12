@@ -196,6 +196,24 @@ export class Container {
         orderedNames[mySlot] = `${orderedNames[mySlot]}(${typeLabel})`
       }
     }
+    if (this.rules.rulename === "chinese8ball") {
+      const flip = (t: number) => (t === 1 ? 2 : t === 2 ? 1 : 0)
+      const myGroup = session.p1type
+      const theirGroup = flip(myGroup)
+      const seat0Group =
+        session.playerIndex === 0 ? myGroup : theirGroup
+      const seat1Group =
+        session.playerIndex === 0 ? theirGroup : myGroup
+      const groupTag = (t: number) =>
+        t === 1 ? "全色" : t === 2 ? "花色" : ""
+      if (seat0Group !== 0 && orderedNames.p1Name) {
+        orderedNames.p1Name = `${orderedNames.p1Name}[${groupTag(seat0Group)}]`
+      }
+      if (seat1Group !== 0 && orderedNames.p2Name) {
+        orderedNames.p2Name = `${orderedNames.p2Name}[${groupTag(seat1Group)}]`
+      }
+      this.hud.updateChineseSuit(myGroup, theirGroup)
+    }
     this.hud.updateScores(
       orderedScores.p1,
       orderedScores.p2,

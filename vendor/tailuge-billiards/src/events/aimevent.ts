@@ -11,6 +11,8 @@ export class AimEvent extends GameEvent {
   elevation = 0
   pos = new Vector3(0, 0, 0)
   i = 0
+  /** 球杆主色（0xRRGGBB），联机同步用 */
+  cueColor?: number
 
   constructor() {
     super()
@@ -30,6 +32,9 @@ export class AimEvent extends GameEvent {
     event.elevation = json.elevation || 0
     if (json.i) {
       event.i = json.i
+    }
+    if (typeof json.cueColor === "number") {
+      event.cueColor = json.cueColor
     }
     return event
   }

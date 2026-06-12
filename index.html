@@ -32,7 +32,51 @@
       border: none;
       background: #000;
     }
+    #access-gate {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .gate-card {
+      width: 100%;
+      max-width: 360px;
+      background: #1a2332;
+      border: 1px solid #243044;
+      border-radius: 12px;
+      padding: 28px;
+      font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      color: #ecf0f1;
+    }
+    .gate-card h2 { margin: 0 0 8px; font-size: 1.2rem; color: #2ecc71; }
+    .gate-card p { margin: 0 0 16px; color: #95a5a6; font-size: 0.85rem; line-height: 1.5; }
+    .gate-card label { display: block; font-size: 0.85rem; color: #bdc3c7; margin-bottom: 6px; }
+    .gate-card input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #34495e;
+      border-radius: 8px;
+      background: #0f1419;
+      color: #ecf0f1;
+      font-size: 1rem;
+      margin-bottom: 12px;
+    }
+    .gate-card button {
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      background: #2ecc71;
+      color: #0f1419;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .gate-card button:hover { background: #27ae60; }
+    .gate-err { color: #e74c3c; font-size: 0.82rem; min-height: 1.2em; margin-bottom: 8px; }
+    .hidden { display: none !important; }
   </style>
+  <script src="js/players.js"></script>
 </head>
 <body>
   <div class="shell">
@@ -48,12 +92,56 @@
         <a href="online.html">在线联机</a>
       </span>
     </header>
+    <div id="access-gate">
+      <div class="gate-card">
+        <h2>输入昵称</h2>
+        <p>昵称 <strong>lpr</strong> 使用粉色专属球杆；其他玩家使用默认球杆。</p>
+        <label for="gate-name">你的昵称</label>
+        <input id="gate-name" type="text" maxlength="20" autocomplete="nickname" placeholder="例如：小明">
+        <p class="gate-err" id="gate-err"></p>
+        <button type="button" id="gate-enter">进入游戏</button>
+      </div>
+    </div>
     <iframe
       id="game-frame"
+      class="hidden"
       title="中式八球游戏"
-      src="game/index.html?ruletype=chinese8ball&amp;lod=3"
       allowfullscreen
     ></iframe>
   </div>
+  <script>
+    const gateName = document.getElementById('gate-name')
+    const gateErr = document.getElementById('gate-err')
+    const gate = document.getElementById('access-gate')
+    const frame = document.getElementById('game-frame')
+
+    const saved = localStorage.getItem('c8ball_name')
+    if (saved) gateName.value = saved
+
+    function startGame() {
+      const name = gateName.value.trim()
+      if (!name) {
+        gateErr.textContent = '请输入昵称'
+        return
+      }
+      gateErr.textContent = ''
+      localStorage.setItem('c8ball_name', name)
+      const params = new URLSearchParams({
+        ruletype: 'chinese8ball',
+        lod: '3',
+        userName: name,
+      })
+      const cue = window.c8ballCueColorParam(name)
+      if (cue) params.set('cueColor', cue)
+      frame.src = 'game/index.html?' + params.toString()
+      gate.classList.add('hidden')
+      frame.classList.remove('hidden')
+    }
+
+    document.getElementById('gate-enter').onclick = startGame
+    gateName.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') startGame()
+    })
+  </script>
 </body>
 </html>

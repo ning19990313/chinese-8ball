@@ -211,7 +211,7 @@ export class EightBall implements Rules {
     return this.handleMiss()
   }
 
-  private handleFoul(outcome: Outcome[], reason: string): Controller {
+  protected handleFoul(outcome: Outcome[], reason: string): Controller {
     this.container.notify({
       type: "Foul",
       title: this.rulename === "chinese8ball" ? "犯规" : "FOUL",
@@ -250,7 +250,7 @@ export class EightBall implements Rules {
     return new WatchAim(this.container)
   }
 
-  private handlePot(outcome: Outcome[]): Controller {
+  protected handlePot(outcome: Outcome[]): Controller {
     const session = Session.getInstance()
     const table = this.container.table
     const pots = Outcome.pots(outcome)
@@ -315,7 +315,7 @@ export class EightBall implements Rules {
     return this.handleFoul([], "8-ball pocketed early")
   }
 
-  private handleMiss(): Controller {
+  protected handleMiss(): Controller {
     const table = this.container.table
     this.container.sendEvent(new StartAimEvent())
     if (this.container.isSinglePlayer) {

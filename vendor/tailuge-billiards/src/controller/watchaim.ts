@@ -30,6 +30,9 @@ export class WatchAim extends ControllerBase {
   override handleAim(event: AimEvent) {
     this.container.table.cue.aim = event
     this.container.table.cueball.pos.copy(event.pos)
+    if (event.cueColor !== undefined) {
+      this.container.table.cue.setPaletteFromColor(event.cueColor)
+    }
     this.container.table.cue.updateAimInput()
     return this
   }

@@ -12,6 +12,17 @@ import {
 } from "../../utils/chinese-table"
 import { TableGeometry } from "../../view/tablegeometry"
 import { EightBall } from "./eightball"
+import { Aim } from "../aim"
+import { WatchAim } from "../watchaim"
+import { ScoreEvent } from "../../events/scoreevent"
+import { WatchEvent } from "../../events/watchevent"
+import { StartAimEvent } from "../../events/startaimevent"
+
+const flipType = (t: number) => {
+  if (t === 1) return 2
+  if (t === 2) return 1
+  return 0
+}
 
 /**
  * 中式八球规则（物理沿用 tailuge/billiards）
@@ -173,5 +184,131 @@ export class ChineseEightBall extends EightBall {
     }
 
     return null
+  }
+
+  /** 本机玩家被分配的花色（session 已按 playerIndex 折算） */
+  private myGroupType(session = Session.getInstance()): number {
+    return session.p1type
+  }
+
+  private groupLabel(type: number): string {
+    if (type === 1) return "全色球 (1-7号)"
+    if (type === 2) return "花色球 (9-15号)"
+    return ""
+  }
+
+  /** 中式：以本杆最先入袋的彩球定花色 */
+  private assignGroupFromPots(pots: Ball[]) {
+    const session = Session.getInstance()
+    if (session.p1type !== 0) return
+    for (const b of pots) {
+      const label = b.label || 0
+      if (label >= 1 && label <= 7) {
+        session.p1type = 1
+        return
+      }
+      if (label >= 9 && label <= 15) {
+        session.p1type = 2
+        return
+      }
+    }
+  }
+
+  private notifyGroupAssigned(typeBefore: number) {
+    const session = Session.getInstance()
+    if (typeBefore !== 0 || session.p1type === 0) return
+    const myType = this.myGroupType(session)
+    this.container.notify({
+      type: "Info",
+      title: `你的花色：${this.groupLabel(myType)}`,
+      subtext: "打进己方球可连续击球，清台后打 8 号获胜",
+      duration: 6000,
+    })
+  }
+
+  override isEndOfGame(outcome: Outcome[], type?: number): boolean {
+    const eightBall = this.container.table.balls.find((b) => b.label === 8)!
+    const eightBallPotted = Outcome.pots(outcome).includes(eightBall)
+    if (!eightBallPotted || this.foulReason(outcome, type)) {
+      return false
+    }
+
+    const session = Session.getInstance()
+    const shooterType = type ?? this.myGroupType(session)
+    if (shooterType === 0) {
+      return false
+    }
+
+    const table = this.container.table
+    const cueball = table.cueball
+    const pottedThisShot = new Set(Outcome.pots(outcome))
+    const myGroup = table.balls.filter(
+      (b) =>
+        b !== cueball &&
+        b !== eightBall &&
+        b.onTable() &&
+        this.isMyGroup(b, shooterType) &&
+        !pottedThisShot.has(b)
+    )
+
+    return myGroup.length === 0
+  }
+
+  protected override handlePot(outcome: Outcome[]): Controller {
+    const session = Session.getInstance()
+    const table = this.container.table
+    const pots = Outcome.pots(outcome)
+
+    if (pots.some((b) => b.label === 8)) {
+      if (this.isEndOfGame(outcome)) {
+        return this.handleGameEnd(true, "合法打进 8 号球，获胜！")
+      }
+      return this.handleGameEnd(false, "未清台误进 8 号球，判负")
+    }
+
+    const typeBefore = session.p1type
+    this.assignGroupFromPots(pots)
+    this.notifyGroupAssigned(typeBefore)
+
+    this.currentBreak += pots.length
+    session.addMyScore(pots.length)
+    this.container.sound.playSuccess(table.inPockets())
+
+    const p1typeForEvent =
+      session.playerIndex === 0 ? session.p1type : flipType(session.p1type)
+    const activePlayer = (session.playerIndex + 1) as 0 | 1 | 2
+    this.container.sendEvent(
+      new ScoreEvent(
+        session.playerIndex === 0 ? session.myScore() : session.opponentScore(),
+        session.playerIndex === 1 ? session.myScore() : session.opponentScore(),
+        this.currentBreak,
+        activePlayer,
+        p1typeForEvent
+      )
+    )
+    this.container.sendEvent(new WatchEvent(table.serialise()))
+
+    const myType = this.myGroupType(session)
+    const pottedMyBall =
+      myType !== 0 && pots.some((b) => this.isMyGroup(b, myType))
+    const openTablePot =
+      typeBefore === 0 && pots.some((b) => b.label && b.label !== 8)
+
+    if (pottedMyBall || openTablePot) {
+      return new Aim(this.container)
+    }
+
+    return this.handleMiss()
+  }
+
+  protected override handleMiss(): Controller {
+    const table = this.container.table
+    this.container.sendEvent(new StartAimEvent())
+    if (this.container.isSinglePlayer) {
+      this.container.sendEvent(new WatchEvent(table.serialise()))
+      this.startTurn()
+      return new Aim(this.container)
+    }
+    return new WatchAim(this.container)
   }
 }

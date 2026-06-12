@@ -1,4 +1,5 @@
 import { R } from "../model/physics/constants"
+import { CuePalette } from "../utils/cuecolor"
 import { up } from "../utils/three-utils"
 import {
   Matrix4,
@@ -118,8 +119,20 @@ export class CueMesh {
     return mesh
   }
 
-  static createCue(tip, but, length): CueMeshes {
-    const cueBody = this.cueGeometry(tip, but, length)
+  static applyPalette(cueBody: Group, palette: CuePalette) {
+    const meshes = cueBody.children.filter(
+      (c): c is Mesh => c instanceof Mesh
+    )
+    if (meshes[0]?.material) {
+      ;(meshes[0].material as MeshPhongMaterial).color.setHex(palette.butt)
+    }
+    if (meshes[1]?.material) {
+      ;(meshes[1].material as MeshPhongMaterial).color.setHex(palette.shaft)
+    }
+  }
+
+  static createCue(tip, but, length, palette?: CuePalette): CueMeshes {
+    const cueBody = this.cueGeometry(tip, but, length, palette)
     const tiltGroup = new Group()
     const mesh = new Group()
 
@@ -133,12 +146,23 @@ export class CueMesh {
     return { mesh, tiltMesh: tiltGroup, cueBody }
   }
 
-  static cueGeometry(tipRadius, buttRadius, length, segments = 9) {
+  static cueGeometry(
+    tipRadius,
+    buttRadius,
+    length,
+    palette?: CuePalette,
+    segments = 9
+  ) {
     const group = new Group()
 
-    // Material Definitions
-    const ashWoodMat = new MeshPhongMaterial({ color: 0xd2b48c, shininess: 50 })
-    const ebonyMat = new MeshPhongMaterial({ color: 0x1a1a1a, shininess: 80 })
+    const shaftColor = palette?.shaft ?? 0xd2b48c
+    const buttColor = palette?.butt ?? 0x1a1a1a
+
+    const ashWoodMat = new MeshPhongMaterial({
+      color: shaftColor,
+      shininess: 50,
+    })
+    const ebonyMat = new MeshPhongMaterial({ color: buttColor, shininess: 80 })
     const ferruleMat = new MeshPhongMaterial({
       color: 0xe5e5e5,
       shininess: 100,

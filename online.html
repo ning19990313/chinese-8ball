@@ -136,7 +136,34 @@
     .warn.show { display: block; }
     .link-text a { color: #3498db; }
     .hint { font-size: 0.78rem; color: #7f8c8d; margin: -8px 0 16px; }
+    .color-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .color-row input[type="color"] {
+      width: 48px;
+      height: 36px;
+      padding: 2px;
+      border: 1px solid #34495e;
+      border-radius: 8px;
+      background: #0f1419;
+      cursor: pointer;
+      margin-bottom: 0;
+    }
+    .color-row span { font-size: 0.85rem; color: #bdc3c7; }
+    .color-row input[type="color"]:disabled { opacity: 0.65; cursor: not-allowed; }
+    .name-err {
+      display: none;
+      margin: -8px 0 16px;
+      font-size: 0.82rem;
+      color: #e74c3c;
+    }
+    .name-err.show { display: block; }
+    .auth-hint { font-size: 0.78rem; color: #7f8c8d; margin: -8px 0 16px; }
   </style>
+  <script src="js/players.js"></script>
 </head>
 <body>
   <div class="card">
@@ -162,6 +189,7 @@
 
     <label for="name">你的昵称</label>
     <input id="name" type="text" placeholder="例如：小明" maxlength="20" autocomplete="nickname">
+    <p class="hint" id="lpr-hint" hidden>昵称 <strong>lpr</strong> 将使用粉色专属球杆，其他玩家为默认球杆</p>
 
     <label for="room">房间号</label>
     <div class="row">
@@ -202,6 +230,7 @@
     const WSS = 'wss://billiards-network.onrender.com'
 
     const nameEl = document.getElementById('name')
+    const lprHintEl = document.getElementById('lpr-hint')
     const roomEl = document.getElementById('room')
     const shareHostEl = document.getElementById('share-host')
     const inviteBox = document.getElementById('invite-box')
@@ -213,6 +242,28 @@
 
     const savedName = localStorage.getItem('c8ball_name')
     if (savedName) nameEl.value = savedName
+
+    function updateLprHint() {
+      const cfg = window.c8ballPlayerConfig(nameEl.value)
+      lprHintEl.hidden = !(cfg && cfg.cueColor)
+    }
+
+    function validateName(showAlert) {
+      const n = nameEl.value.trim()
+      if (!n) {
+        if (showAlert) alert('请输入昵称')
+        nameEl.focus()
+        return false
+      }
+      return true
+    }
+
+    updateLprHint()
+    nameEl.addEventListener('input', updateLprHint)
+
+    function cueColorForName(name) {
+      return window.c8ballCueColorParam(name)
+    }
 
     const basePath = location.pathname.replace(/\/[^/]*$/, '/')
     const port = location.port || (location.protocol === 'https:' ? '443' : '80')
@@ -236,7 +287,7 @@
     function saveName() {
       const n = nameEl.value.trim()
       if (n) localStorage.setItem('c8ball_name', n)
-      return n || '玩家'
+      return n
     }
 
     function shareOrigin() {
@@ -262,6 +313,8 @@
         userId: opts.userId,
         userName: opts.userName,
       })
+      const cue = cueColorForName(opts.userName)
+      if (cue) params.set('cueColor', cue)
       if (opts.first) params.set('first', 'true')
       return `${basePath}game/index.html?${params.toString()}`
     }
@@ -332,6 +385,7 @@
     }
 
     document.getElementById('create').onclick = () => {
+      if (!validateName(true)) return
       const name = saveName()
       const room = roomEl.value.trim() || randomRoom()
       roomEl.value = room
@@ -350,6 +404,7 @@
 
     enterHostBtn.onclick = () => {
       if (!pendingHostUrl) return
+      if (!validateName(true)) return
       if (isFile) {
         alert('请用 http.server 启动后再进入游戏')
         return
@@ -358,6 +413,7 @@
     }
 
     document.getElementById('join').onclick = () => {
+      if (!validateName(true)) return
       const name = saveName()
       const room = roomEl.value.trim()
       if (!room) {

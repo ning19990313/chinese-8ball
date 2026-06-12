@@ -7,6 +7,8 @@ import { AimInputs } from "./dom/aiminputs"
 import { Ball, State } from "../model/ball"
 import { cueStrike } from "../model/physics/physics"
 import { CueMesh } from "./cuemesh"
+import { CuePalette, paletteFromColor } from "../utils/cuecolor"
+import { Session } from "../network/client/session"
 import { Mesh, Vector3, Object3D } from "three"
 import { maxPower, offCenterLimit, R } from "../model/physics/constants"
 import { cueIntersectsAnything } from "../utils/cueintersect"
@@ -31,20 +33,51 @@ export class Cue {
   private readonly tempVec2 = new Vector3()
   private readonly tempVec3 = new Vector3()
   hitAnimationWeight: number = 0
+  private myPalette?: CuePalette
 
   constructor() {
     if (typeof document !== "undefined") {
+      const sessionColor = Session.getInstance().cueColor
+      const palette =
+        sessionColor !== undefined ? paletteFromColor(sessionColor) : undefined
       const cue = CueMesh.createCue(
         (R * 0.07) / 0.5,
         (R * 0.23) / 0.5,
-        this.length
+        this.length,
+        palette
       )
       this.mesh = cue.mesh
       this.tiltMesh = cue.tiltMesh
       this.cueBody = cue.cueBody
+      if (palette) {
+        this.myPalette = palette
+      }
       this.helperMesh = CueMesh.createHelper()
       this.placerMesh = CueMesh.createPlacer()
       this.shadowMesh = CueMesh.createShadow(this.length)
+    }
+  }
+
+  setPalette(palette: CuePalette) {
+    if (!this.cueBody) return
+    CueMesh.applyPalette(this.cueBody as import("three").Group, palette)
+    this.myPalette = palette
+  }
+
+  applyMyPalette() {
+    if (this.myPalette) {
+      this.setPalette(this.myPalette)
+    }
+  }
+
+  setPaletteFromColor(hex: number) {
+    this.setPalette(paletteFromColor(hex))
+  }
+
+  stampAimColor(aim: AimEvent) {
+    const c = Session.getInstance().cueColor
+    if (c !== undefined) {
+      aim.cueColor = c
     }
   }
 
