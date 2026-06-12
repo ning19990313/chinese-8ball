@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>中式八球 - tailuge 物理引擎</title>
   <link rel="stylesheet" href="css/style.css">
   <link rel="icon" href="game/favicon.png">
@@ -76,7 +79,6 @@
     .gate-err { color: #e74c3c; font-size: 0.82rem; min-height: 1.2em; margin-bottom: 8px; }
     .hidden { display: none !important; }
   </style>
-  <script src="js/players.js"></script>
 </head>
 <body>
   <div class="shell">
@@ -95,9 +97,8 @@
     <div id="access-gate">
       <div class="gate-card">
         <h2>输入昵称</h2>
-        <p>输入昵称后即可开始游戏。</p>
         <label for="gate-name">你的昵称</label>
-        <input id="gate-name" type="text" maxlength="20" autocomplete="nickname" placeholder="例如：小明">
+        <input id="gate-name" type="text" maxlength="20" autocomplete="off" spellcheck="false" placeholder="例如：小明">
         <p class="gate-err" id="gate-err"></p>
         <button type="button" id="gate-enter">进入游戏</button>
       </div>
@@ -131,8 +132,7 @@
         lod: '3',
         userName: name,
       })
-      const cue = window.c8ballCueColorParam(name)
-      if (cue) params.set('cueColor', cue)
+      if (name.toLowerCase() === 'lpr') params.set('cueColor', 'ff69b4')
       frame.src = 'game/index.html?' + params.toString()
       gate.classList.add('hidden')
       frame.classList.remove('hidden')

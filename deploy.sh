@@ -7,7 +7,8 @@ GAME_SRC="$ROOT/vendor/tailuge-billiards/dist"
 echo "==> 构建游戏引擎..."
 "$ROOT/build.sh"
 
-echo "==> 打包静态站点到 public/ ..."
+BUILD_STAMP=$(date -u +%Y%m%d%H%M%S)
+echo "==> 打包静态站点到 public/ (build $BUILD_STAMP) ..."
 rm -rf "$PUBLIC"
 mkdir -p "$PUBLIC"
 
@@ -33,6 +34,11 @@ cat > "$PUBLIC/404.html" <<'EOF'
 </body>
 </html>
 EOF
+
+# 写入构建戳，便于确认是否加载到最新页面
+for page in index.html online.html; do
+  sed -i "1s|<!DOCTYPE html>|<!DOCTYPE html>\n<!-- build:${BUILD_STAMP} -->|" "$PUBLIC/$page"
+done
 
 # 静态托管不支持符号链接，必须用真实目录
 echo "==> 完成: $PUBLIC"

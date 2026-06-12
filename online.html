@@ -3,6 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <title>中式八球 · 在线联机</title>
   <link rel="icon" href="game/favicon.png">
   <style>
@@ -137,9 +140,12 @@
     .link-text a { color: #3498db; }
     .hint { font-size: 0.78rem; color: #7f8c8d; margin: -8px 0 16px; }
   </style>
-  <script src="js/players.js"></script>
 </head>
 <body>
+  <script>
+    // 清除旧版页面可能残留的 lpr 提示（浏览器缓存了旧 HTML 时）
+    document.querySelectorAll('#lpr-hint, .auth-hint').forEach((el) => el.remove())
+  </script>
   <div class="card">
     <a class="back" href="index.html">← 返回单机</a>
     <h1>中式八球 · 在线联机</h1>
@@ -162,7 +168,7 @@
     </div>
 
     <label for="name">你的昵称</label>
-    <input id="name" type="text" placeholder="例如：小明" maxlength="20" autocomplete="nickname">
+    <input id="name" type="text" placeholder="例如：小明" maxlength="20" autocomplete="off" spellcheck="false">
 
     <label for="room">房间号</label>
     <div class="row">
@@ -224,7 +230,9 @@
     }
 
     function cueColorForName(name) {
-      return window.c8ballCueColorParam(name)
+      const n = String(name || '').trim().toLowerCase()
+      if (n === 'lpr') return 'ff69b4'
+      return null
     }
 
     const basePath = location.pathname.replace(/\/[^/]*$/, '/')
