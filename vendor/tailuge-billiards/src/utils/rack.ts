@@ -11,6 +11,7 @@ import {
   CHINESE_FOOT_SPOT,
   CHINESE_HEAD_STRING,
 } from "./chinese-table"
+import { chineseBallColor } from "./ballcolors"
 
 export class Rack {
   static readonly noise = Math.fround(R * 0.023 + 0.0015 * Math.random())
@@ -77,7 +78,7 @@ export class Rack {
   static chineseObjectBall(pos, label: number) {
     return new Ball(
       Rack.jitter(pos),
-      Rack.BALL_COLORS[label],
+      chineseBallColor(label),
       label,
       "projected"
     )

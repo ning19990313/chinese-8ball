@@ -1,26 +1,26 @@
-import { CanvasTexture, Color } from "three"
+import { CanvasTexture, Color, LinearFilter } from "three"
+import { chineseBallColor } from "../utils/ballcolors"
 
 export class BallTextureFactory {
   private static readonly textureCache: Map<string, CanvasTexture> = new Map()
 
   static getOrCreateTexture(
     label: number,
-    color: Color,
-    size = 256
+    _color: Color,
+    size = 512
   ): CanvasTexture {
-    const key = `${label}_${color.getHex()}_${size}`
+    const key = `${label}_${size}`
     if (this.textureCache.has(key)) {
       return this.textureCache.get(key)!
     }
 
-    const texture = this.createNumberTexture(label, color, size)
+    const texture = this.createNumberTexture(label, size)
     this.textureCache.set(key, texture)
     return texture
   }
 
   private static createNumberTexture(
     label: number,
-    color: Color,
     size: number
   ): CanvasTexture {
     const scale = size / 256
@@ -32,18 +32,23 @@ export class BallTextureFactory {
       return new CanvasTexture(canvas)
     }
 
+    const ballColor = chineseBallColor(label)
+
     if (label === 8) {
       ctx.fillStyle = "#000000"
       ctx.fillRect(0, 0, size, size)
     } else if (label >= 9) {
-      // 花色球 9–15：白底 + 中间宽彩色条
+      // 花色球：白底 + 中间彩色条
       ctx.fillStyle = "#ffffff"
       ctx.fillRect(0, 0, size, size)
-      ctx.fillStyle = `#${color.getHexString()}`
-      ctx.fillRect(0, size * 0.22, size, size * 0.56)
+      ctx.fillStyle = ballColor
+      ctx.fillRect(0, size * 0.2, size, size * 0.6)
+    } else if (label >= 1) {
+      // 全色球：整球彩色
+      ctx.fillStyle = ballColor
+      ctx.fillRect(0, 0, size, size)
     } else {
-      // 全色球 1–7：整球彩色
-      ctx.fillStyle = `#${color.getHexString()}`
+      ctx.fillStyle = "#ffffff"
       ctx.fillRect(0, 0, size, size)
     }
 
@@ -55,29 +60,31 @@ export class BallTextureFactory {
 
       ctx.beginPath()
       ctx.arc(centerX, centerY, radius + border, 0, Math.PI * 2)
-      ctx.fillStyle = "black"
+      ctx.fillStyle = "#000000"
       ctx.fill()
 
       ctx.beginPath()
       ctx.arc(centerX, centerY, radius, 0, Math.PI * 2)
-      ctx.fillStyle = "white"
+      ctx.fillStyle = "#ffffff"
       ctx.fill()
 
-      ctx.fillStyle = "black"
-      ctx.strokeStyle = "black"
+      ctx.fillStyle = "#000000"
+      ctx.strokeStyle = "#000000"
       const fontSize = Math.round(97 * scale)
       ctx.lineWidth = fontSize * 0.05
       ctx.font = `900 ${fontSize}px "Arial Black", Arial, sans-serif`
       ctx.textAlign = "center"
       ctx.textBaseline = "middle"
-      const textX = centerX
       const textY = centerY + Math.round(5 * scale)
-      ctx.strokeText(label.toString(), textX, textY)
-      ctx.fillText(label.toString(), textX, textY)
+      ctx.strokeText(label.toString(), centerX, textY)
+      ctx.fillText(label.toString(), centerX, textY)
     }
 
     const texture = new CanvasTexture(canvas)
     texture.flipY = false
+    texture.generateMipmaps = false
+    texture.minFilter = LinearFilter
+    texture.magFilter = LinearFilter
     return texture
   }
 }

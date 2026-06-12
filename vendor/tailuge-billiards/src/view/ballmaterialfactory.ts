@@ -108,27 +108,16 @@ export class BallMaterialFactory {
     const numberTexture = BallTextureFactory.getOrCreateTexture(
       label,
       color,
-      size
+      512
     )
 
-    const material =
-      Session.getLod() <= 1
-        ? new MeshStandardMaterial({
-            color: color,
-            roughness: 0.5,
-            metalness: 0,
-            flatShading: true,
-            transparent: false,
-            depthWrite: true,
-          })
-        : new MeshPhysicalMaterial({
-            color: color,
-            roughness: 0.1,
-            metalness: 0,
-            clearcoat: 1.0,
-            clearcoatRoughness: 0.02,
-            reflectivity: 0.25,
-          })
+    const material = new MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.32,
+      metalness: 0,
+      transparent: false,
+      depthWrite: true,
+    })
 
     material.onBeforeCompile = (shader: any) => {
       shader.uniforms.numberTex = { value: numberTexture }
@@ -175,7 +164,7 @@ export class BallMaterialFactory {
 
         // Add a negative bias to force a higher-resolution mipmap level
         // -0.5 to -1.0 usually restores the "crisp" look.
-        vec4 texColor = textureGrad(numberTex, projUv, dx * 0.5, dy * 0.5);
+        vec4 texColor = texture(numberTex, projUv);
      
         diffuseColor.rgb = texColor.rgb;`
       )
