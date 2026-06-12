@@ -113,9 +113,48 @@ export class ChineseEightBall extends EightBall {
     return aims <= 1
   }
 
-  getRequiredObjectBall(type?: number): Ball | undefined {
-    const session = Session.getInstance()
-    const effectiveType = type ?? session.p1type
+  private wrongFirstHitReason(
+    hitBall: Ball,
+    effectiveType: number
+  ): string | null {
+    if (this.isBreakShot()) {
+      if (hitBall.label !== 1) {
+        return "开球须先击打 1 号球"
+      }
+      return null
+    }
+
+    const table = this.container.table
+    const cueball = table.cueball
+    const myGroupOnTable = table.balls.filter(
+      (b) =>
+        b !== cueball && b.onTable() && this.isMyGroup(b, effectiveType)
+    )
+
+    if (effectiveType === 0) {
+      if (hitBall.label === 8) {
+        return "未分花色不能先打 8 号球"
+      }
+      return null
+    }
+
+    if (myGroupOnTable.length > 0) {
+      if (!this.isMyGroup(hitBall, effectiveType)) {
+        return effectiveType === 1
+          ? "须先击打己方全色球"
+          : "须先击打己方花色球"
+      }
+      return null
+    }
+
+    if (hitBall.label !== 8) {
+      return "未清台不能先打 8 号球"
+    }
+    return null
+  }
+
+  override nextCandidateBall(p1type?: number): Ball | undefined {
+    const type = p1type ?? Session.getInstance().p1type
     const table = this.container.table
     const cueball = table.cueball
 
@@ -123,33 +162,21 @@ export class ChineseEightBall extends EightBall {
       return table.balls.find((b) => b.label === 1 && b.onTable())
     }
 
-    if (effectiveType === 0) {
-      return undefined
+    if (type === 0) {
+      const open = table.balls.filter(
+        (b) => b !== cueball && b.onTable() && b.label !== 8
+      )
+      return open.length > 0 ? Respot.closest(cueball, open) : undefined
     }
 
     const myGroup = table.balls.filter(
-      (b) =>
-        b !== cueball && b.onTable() && this.isMyGroup(b, effectiveType)
+      (b) => b !== cueball && b.onTable() && this.isMyGroup(b, type)
     )
     if (myGroup.length > 0) {
-      return myGroup.sort((a, b) => (a.label || 0) - (b.label || 0))[0]
+      return Respot.closest(cueball, myGroup)
     }
 
     return table.balls.find((b) => b.label === 8 && b.onTable())
-  }
-
-  override nextCandidateBall(p1type?: number): Ball | undefined {
-    const required = this.getRequiredObjectBall(p1type)
-    if (required) {
-      return required
-    }
-    const balls = this.container.table.balls.filter(
-      (b) => b !== this.cueball && b.onTable() && b.label !== 8
-    )
-    if (balls.length === 0) {
-      return undefined
-    }
-    return balls.sort((a, b) => (a.label || 0) - (b.label || 0))[0]
   }
 
   override foulReason(outcome: Outcome[], type?: number): string | null {
@@ -169,7 +196,6 @@ export class ChineseEightBall extends EightBall {
     }
 
     const hitBall = firstCollision.ballB!
-    const required = this.getRequiredObjectBall(type)
     const effectiveType = type ?? Session.getInstance().p1type
 
     if (
@@ -179,19 +205,9 @@ export class ChineseEightBall extends EightBall {
       return "线后自由球：须击打开球线顶边侧的目标球"
     }
 
-    if (this.isBreakShot()) {
-      if (hitBall.label !== 1) {
-        return "开球须先击打 1 号球"
-      }
-    } else if (required) {
-      if (hitBall.label !== required.label) {
-        if (required.label === 8) {
-          return "未清台不能先打 8 号球"
-        }
-        return `须先击打 ${required.label} 号球`
-      }
-    } else if (effectiveType === 0 && hitBall.label === 8) {
-      return "未分花色不能先打 8 号球"
+    const wrongHit = this.wrongFirstHitReason(hitBall, effectiveType)
+    if (wrongHit) {
+      return wrongHit
     }
 
     if (Outcome.potCount(outcome) === 0) {
