@@ -20,6 +20,9 @@ import { NchanMessageRelay } from "../network/client/nchanmessagerelay"
 import { BotRelay } from "../network/bot/botrelay"
 import { ScoreReporter } from "../network/client/scorereporter"
 import { BeginEvent } from "../events/beginevent"
+import { WatchEvent } from "../events/watchevent"
+import { EventType } from "../events/eventtype"
+import { Init } from "../controller/init"
 //import { logNetEvent } from "../utils/event-log"
 import { Logger } from "../network/bot/logger"
 import { getUID } from "../utils/uid"
@@ -213,7 +216,14 @@ export class BrowserContainer {
       this.messageRelay?.subscribe(this.tableId, (e) => {
         this.netEvent(e)
       })
-      if (!this.first) {
+      if (this.first) {
+        // 房主不依赖客人 BeginEvent（客人可能先连上但消息已丢失）
+        setTimeout(() => {
+          if (this.container?.controller instanceof Init) {
+            this.container.eventQueue.push(new BeginEvent())
+          }
+        }, 1200)
+      } else {
         this.broadcast(new BeginEvent())
       }
     }
@@ -235,23 +245,58 @@ export class BrowserContainer {
       this.container.notification.clear()
     }
 
-    //    logNetEvent(this.playername, event, "receive")
+    const session = Session.getInstance()
+
     if (event.clientId) {
-      Session.getInstance().setOpponentClientId(event.clientId)
+      session.setOpponentClientId(event.clientId)
     }
     if (event.playername) {
-      Session.getInstance().opponentName = event.playername
+      session.opponentName = event.playername
     }
 
-    const session = Session.getInstance()
+    // 迟到加入的客人：房主已在瞄准/击球，补发台面状态
     if (
-      !session.vsNotificationShown &&
+      event.type === EventType.BEGIN &&
+      this.first &&
+      !(this.container.controller instanceof Init)
+    ) {
+      this.container.sendEvent(
+        new WatchEvent(this.container.table.serialise())
+      )
+      return
+    }
+
+    // 房主收到客人 BeginEvent 后立即开局
+    if (
+      event.type === EventType.BEGIN &&
+      this.first &&
+      this.container.controller instanceof Init
+    ) {
+      this.container.eventQueue.push(new BeginEvent())
+      return
+    }
+
+    //    logNetEvent(this.playername, event, "receive")
+
+    if (
+      this.first &&
+      this.container.controller instanceof Init &&
+      session.opponentClientId &&
+      event.type !== EventType.BEGIN
+    ) {
+      this.container.eventQueue.push(new BeginEvent())
+      return
+    }
+
+    const sessionAfter = Session.getInstance()
+    if (
+      !sessionAfter.vsNotificationShown &&
       !this.botMode &&
       !this.spectator &&
-      session.playername &&
-      session.opponentName
+      sessionAfter.playername &&
+      sessionAfter.opponentName
     ) {
-      const names = session.orderedNamesForHud()
+      const names = sessionAfter.orderedNamesForHud()
       if (names.p1Name && names.p2Name) {
         this.container.notifyLocal({
           type: "Info",
@@ -261,7 +306,7 @@ export class BrowserContainer {
               ? `Race to: ${ThreeCushionConfig.raceTo}`
               : undefined,
         })
-        session.vsNotificationShown = true
+        sessionAfter.vsNotificationShown = true
       }
     }
     this.container.eventQueue.push(event)

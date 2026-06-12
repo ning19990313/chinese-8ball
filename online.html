@@ -189,7 +189,6 @@
 
     <label for="name">你的昵称</label>
     <input id="name" type="text" placeholder="例如：小明" maxlength="20" autocomplete="nickname">
-    <p class="hint" id="lpr-hint" hidden>昵称 <strong>lpr</strong> 将使用粉色专属球杆，其他玩家为默认球杆</p>
 
     <label for="room">房间号</label>
     <div class="row">
@@ -215,9 +214,7 @@
 
     <div class="tips">
       <strong>说明</strong><br>
-      · 房主先进入，看到「等待对手加入」；客人加入后房主自动开球<br>
-      · 客人进入后请等待房主开球，轮到你时右下角「击球」按钮会亮起<br>
-      · 必须两人都进入同一房间才能开始，单人进房无法击球<br>
+      · 房主先进入球台；对手加入后即可开球（对手先进入时，房主进房后也会自动开始）<br>
       · 消息经公共中继服务器转发（<code>billiards-network.onrender.com</code>）<br>
       · 局域网联机：先运行 <code>python3 -m http.server 8765</code>，用 <code>http://你的IP:8765/online.html</code> 打开<br>
       · 外网联机：需部署到 GitHub Pages 等公网地址，不能只发 localhost 链接<br>
@@ -230,7 +227,6 @@
     const WSS = 'wss://billiards-network.onrender.com'
 
     const nameEl = document.getElementById('name')
-    const lprHintEl = document.getElementById('lpr-hint')
     const roomEl = document.getElementById('room')
     const shareHostEl = document.getElementById('share-host')
     const inviteBox = document.getElementById('invite-box')
@@ -243,11 +239,6 @@
     const savedName = localStorage.getItem('c8ball_name')
     if (savedName) nameEl.value = savedName
 
-    function updateLprHint() {
-      const cfg = window.c8ballPlayerConfig(nameEl.value)
-      lprHintEl.hidden = !(cfg && cfg.cueColor)
-    }
-
     function validateName(showAlert) {
       const n = nameEl.value.trim()
       if (!n) {
@@ -257,9 +248,6 @@
       }
       return true
     }
-
-    updateLprHint()
-    nameEl.addEventListener('input', updateLprHint)
 
     function cueColorForName(name) {
       return window.c8ballCueColorParam(name)

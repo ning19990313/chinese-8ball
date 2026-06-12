@@ -105,6 +105,12 @@ export class Init extends ControllerBase {
       )
       return new Aim(this.container)
     }
+    if (
+      this.container.rules.rulename === "chinese8ball" &&
+      isFirstShot(this.container.recorder)
+    ) {
+      return new Aim(this.container)
+    }
     return new PlaceBall(this.container)
   }
 }
