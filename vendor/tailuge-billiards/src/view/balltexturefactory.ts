@@ -9,7 +9,7 @@ export class BallTextureFactory {
     _color: Color,
     size = 512
   ): CanvasTexture {
-    const key = `${label}_${size}`
+    const key = `v3_${label}_${size}`
     if (this.textureCache.has(key)) {
       return this.textureCache.get(key)!
     }
@@ -37,16 +37,17 @@ export class BallTextureFactory {
     if (label === 8) {
       ctx.fillStyle = "#000000"
       ctx.fillRect(0, 0, size, size)
-    } else if (label >= 9) {
-      // 花色球：白底 + 中间彩色条
-      ctx.fillStyle = "#ffffff"
-      ctx.fillRect(0, 0, size, size)
-      ctx.fillStyle = ballColor
-      ctx.fillRect(0, size * 0.2, size, size * 0.6)
     } else if (label >= 1) {
-      // 全色球：整球彩色
+      // 全色/花色先铺彩色底
       ctx.fillStyle = ballColor
       ctx.fillRect(0, 0, size, size)
+      if (label >= 9) {
+        // 花色球：贴图上下加白条（经球面投影后正面为白+彩条）
+        const cap = size * 0.2
+        ctx.fillStyle = "#ffffff"
+        ctx.fillRect(0, 0, size, cap)
+        ctx.fillRect(0, size - cap, size, cap)
+      }
     } else {
       ctx.fillStyle = "#ffffff"
       ctx.fillRect(0, 0, size, size)

@@ -1,5 +1,6 @@
 import {
   Color,
+  MeshBasicMaterial,
   MeshPhongMaterial,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
@@ -12,7 +13,7 @@ import { Session } from "../network/client/session"
 export class BallMaterialFactory {
   private static readonly materialCache: Map<
     string,
-    MeshStandardMaterial | MeshPhongMaterial | MeshPhysicalMaterial
+    MeshStandardMaterial | MeshPhongMaterial | MeshPhysicalMaterial | MeshBasicMaterial
   > = new Map()
 
   static createTexturedDotsMaterial(color: Color): MeshPhysicalMaterial {
@@ -98,25 +99,22 @@ export class BallMaterialFactory {
   static createProjectedMaterial(
     label: number,
     color: Color,
-    size = 256
-  ): MeshStandardMaterial {
-    const key = `projected_${label}_${color.getHex()}_${size}`
+    size = 512
+  ): MeshBasicMaterial {
+    const key = `projected_v3_${label}_${size}`
     if (this.materialCache.has(key)) {
-      return this.materialCache.get(key) as MeshStandardMaterial
+      return this.materialCache.get(key) as MeshBasicMaterial
     }
 
     const numberTexture = BallTextureFactory.getOrCreateTexture(
       label,
       color,
-      512
+      size
     )
 
-    const material = new MeshStandardMaterial({
+    // 不受台桌绿光影响，贴图颜色原样显示
+    const material = new MeshBasicMaterial({
       color: 0xffffff,
-      roughness: 0.32,
-      metalness: 0,
-      transparent: false,
-      depthWrite: true,
     })
 
     material.onBeforeCompile = (shader: any) => {

@@ -2,9 +2,9 @@ import {
   IcosahedronGeometry,
   Matrix4,
   Mesh,
+  MeshBasicMaterial,
   MeshPhongMaterial,
   CircleGeometry,
-  MeshBasicMaterial,
   ArrowHelper,
   Color,
   BufferAttribute,
@@ -121,6 +121,7 @@ export class BallMesh {
   initialiseMesh(color: Color, label?: number, appearance?: BallAppearance) {
     let geometry: IcosahedronGeometry
     let material:
+      | MeshBasicMaterial
       | MeshPhongMaterial
       | MeshStandardMaterial
       | MeshPhysicalMaterial
