@@ -84,7 +84,7 @@ export class View {
   }
 
   private initialiseScene() {
-    this.scene.add(new AmbientLight(0x009922, 0.3))
+    this.scene.add(new AmbientLight(0xffffff, 0.38))
     if (this.assets.background) {
       this.scene.add(this.assets.background)
     }

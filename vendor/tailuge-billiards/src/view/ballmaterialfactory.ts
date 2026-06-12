@@ -1,6 +1,5 @@
 import {
   Color,
-  MeshBasicMaterial,
   MeshPhongMaterial,
   MeshPhysicalMaterial,
   MeshStandardMaterial,
@@ -13,7 +12,7 @@ import { Session } from "../network/client/session"
 export class BallMaterialFactory {
   private static readonly materialCache: Map<
     string,
-    MeshStandardMaterial | MeshPhongMaterial | MeshPhysicalMaterial | MeshBasicMaterial
+    MeshStandardMaterial | MeshPhongMaterial | MeshPhysicalMaterial
   > = new Map()
 
   static createTexturedDotsMaterial(color: Color): MeshPhysicalMaterial {
@@ -100,10 +99,10 @@ export class BallMaterialFactory {
     label: number,
     color: Color,
     size = 512
-  ): MeshBasicMaterial {
-    const key = `projected_v3_${label}_${size}`
+  ): MeshStandardMaterial {
+    const key = `projected_v4_${label}_${size}`
     if (this.materialCache.has(key)) {
-      return this.materialCache.get(key) as MeshBasicMaterial
+      return this.materialCache.get(key) as MeshStandardMaterial
     }
 
     const numberTexture = BallTextureFactory.getOrCreateTexture(
@@ -112,10 +111,17 @@ export class BallMaterialFactory {
       size
     )
 
-    // 不受台桌绿光影响，贴图颜色原样显示
-    const material = new MeshBasicMaterial({
+    const material = new MeshStandardMaterial({
       color: 0xffffff,
+      roughness: 0.38,
+      metalness: 0,
+      emissive: 0x111111,
+      emissiveIntensity: 0.35,
+      transparent: false,
+      depthWrite: true,
     })
+
+    material.customProgramCacheKey = () => key
 
     material.onBeforeCompile = (shader: any) => {
       shader.uniforms.numberTex = { value: numberTexture }
@@ -142,28 +148,12 @@ export class BallMaterialFactory {
       shader.fragmentShader = shader.fragmentShader.replace(
         "#include <color_fragment>",
         `#include <color_fragment>
-        // Calculate the base UV mapping
         vec2 projUv = vLocalPosition.xz * invScale + 0.5;
-
-        // Capture derivatives BEFORE the flip. 
-        // This prevents the GPU from seeing the 'teleport' at the equator.
-        vec2 dx = dFdx(projUv);
-        vec2 dy = dFdy(projUv);
-
-        // Flip logic for the bottom hemisphere
         if (vLocalPosition.y < 0.0) {
           projUv.x = 1.0 - projUv.x;
-          // Mirror the derivatives so mipmapping stays consistent
-          dx.x = -dx.x;
-          dy.x = -dy.x;
         }
-
         projUv = clamp(projUv, 0.0, 1.0);
-
-        // Add a negative bias to force a higher-resolution mipmap level
-        // -0.5 to -1.0 usually restores the "crisp" look.
         vec4 texColor = texture(numberTex, projUv);
-     
         diffuseColor.rgb = texColor.rgb;`
       )
     }
