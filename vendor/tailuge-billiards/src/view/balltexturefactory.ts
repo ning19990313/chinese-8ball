@@ -9,7 +9,7 @@ export class BallTextureFactory {
     _color: Color,
     size = 512
   ): CanvasTexture {
-    const key = `ball_${label}_${size}`
+    const key = `eq_${label}_${size}`
     if (this.textureCache.has(key)) {
       return this.textureCache.get(key)!
     }
@@ -37,15 +37,16 @@ export class BallTextureFactory {
     if (label === 8) {
       ctx.fillStyle = "#000000"
       ctx.fillRect(0, 0, size, size)
+    } else if (label >= 9) {
+      // 花色球：白底 + 赤道宽彩条（配合球面经纬 UV）
+      ctx.fillStyle = "#ffffff"
+      ctx.fillRect(0, 0, size, size)
+      ctx.fillStyle = ballColor
+      const bandH = size * 0.26
+      ctx.fillRect(0, size * 0.5 - bandH / 2, size, bandH)
     } else if (label >= 1) {
       ctx.fillStyle = ballColor
       ctx.fillRect(0, 0, size, size)
-      if (label >= 9) {
-        const cap = size * 0.2
-        ctx.fillStyle = "#ffffff"
-        ctx.fillRect(0, 0, size, cap)
-        ctx.fillRect(0, size - cap, size, cap)
-      }
     } else {
       ctx.fillStyle = "#ffffff"
       ctx.fillRect(0, 0, size, size)
@@ -80,7 +81,6 @@ export class BallTextureFactory {
     }
 
     const texture = new CanvasTexture(canvas)
-    texture.flipY = false
     texture.colorSpace = SRGBColorSpace
     texture.generateMipmaps = false
     texture.minFilter = LinearFilter

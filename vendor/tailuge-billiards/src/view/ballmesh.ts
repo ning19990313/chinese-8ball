@@ -2,8 +2,10 @@ import {
   IcosahedronGeometry,
   Matrix4,
   Mesh,
-  MeshBasicMaterial,
+  MeshLambertMaterial,
   MeshPhongMaterial,
+  CircleGeometry,
+  MeshBasicMaterial,
   ArrowHelper,
   Color,
   BufferAttribute,
@@ -41,24 +43,23 @@ export class BallMesh {
     return this._ballGeometry
   }
 
+  /** 球面经纬 UV（equirectangular），花色球赤道彩条能正确绕球一圈 */
   private static getProjectedBallGeometry() {
     if (!this._projectedBallGeometry) {
       const geom = new IcosahedronGeometry(
         R,
-        Math.max(1, Session.getLod())
+        Math.max(2, Session.getLod())
       )
-      const invScale = 1 / (R * 2)
       const pos = geom.attributes.position
       const uv = new Float32Array(pos.count * 2)
       for (let i = 0; i < pos.count; i++) {
         const x = pos.getX(i)
         const y = pos.getY(i)
         const z = pos.getZ(i)
-        let u = x * invScale + 0.5
-        const v = z * invScale + 0.5
-        if (y < 0) u = 1.0 - u
-        uv[i * 2] = Math.max(0, Math.min(1, u))
-        uv[i * 2 + 1] = Math.max(0, Math.min(1, v))
+        const u = 0.5 + Math.atan2(x, z) / (2 * Math.PI)
+        const v = 0.5 - Math.asin(Math.max(-1, Math.min(1, y / R))) / Math.PI
+        uv[i * 2] = u
+        uv[i * 2 + 1] = v
       }
       geom.setAttribute("uv", new BufferAttribute(uv, 2))
       this._projectedBallGeometry = geom
@@ -146,7 +147,7 @@ export class BallMesh {
   initialiseMesh(color: Color, label?: number, appearance?: BallAppearance) {
     let geometry: IcosahedronGeometry
     let material:
-      | MeshBasicMaterial
+      | MeshLambertMaterial
       | MeshPhongMaterial
       | MeshStandardMaterial
       | MeshPhysicalMaterial

@@ -1,6 +1,6 @@
 import {
   Color,
-  MeshBasicMaterial,
+  MeshLambertMaterial,
   MeshPhongMaterial,
   MeshPhysicalMaterial,
 } from "three"
@@ -10,7 +10,7 @@ import { BallCubeTextureFactory } from "./ballcubetexturefactory"
 export class BallMaterialFactory {
   private static readonly materialCache: Map<
     string,
-    MeshBasicMaterial | MeshPhongMaterial | MeshPhysicalMaterial
+    MeshLambertMaterial | MeshPhongMaterial | MeshPhysicalMaterial
   > = new Map()
 
   static createTexturedDotsMaterial(color: Color): MeshPhysicalMaterial {
@@ -94,16 +94,16 @@ export class BallMaterialFactory {
   }
 
   /**
-   * 目标球：MeshBasicMaterial + map，贴图原色显示，不受 PBR 高光影响（避免灰白大理石纹）
+   * 目标球：Lambert + 贴图，颜色饱和且略带立体感（无 PBR 大理石灰纹）
    */
   static createProjectedMaterial(
     label: number,
     color: Color,
     size = 512
-  ): MeshBasicMaterial {
-    const key = `basic_ball_${label}_${size}`
+  ): MeshLambertMaterial {
+    const key = `lambert_ball_${label}_${size}`
     if (this.materialCache.has(key)) {
-      return this.materialCache.get(key) as MeshBasicMaterial
+      return this.materialCache.get(key) as MeshLambertMaterial
     }
 
     const numberTexture = BallTextureFactory.getOrCreateTexture(
@@ -112,8 +112,11 @@ export class BallMaterialFactory {
       size
     )
 
-    const material = new MeshBasicMaterial({
+    const material = new MeshLambertMaterial({
       map: numberTexture,
+      emissiveMap: numberTexture,
+      emissive: 0xffffff,
+      emissiveIntensity: 0.42,
       toneMapped: false,
     })
 
