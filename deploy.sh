@@ -13,7 +13,10 @@ rm -rf "$PUBLIC"
 mkdir -p "$PUBLIC"
 
 cp "$ROOT/index.html" "$ROOT/online.html" "$ROOT/NOTICE.md" "$PUBLIC/"
-cp -r "$ROOT/css" "$ROOT/js" "$PUBLIC/"
+cp -r "$ROOT/css" "$PUBLIC/"
+if [ -d "$ROOT/js" ]; then
+  cp -r "$ROOT/js" "$PUBLIC/"
+fi
 cp -r "$GAME_SRC" "$PUBLIC/game"
 
 # GitHub Pages：禁用 Jekyll 处理，避免静态资源 404
