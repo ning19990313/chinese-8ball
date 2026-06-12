@@ -1,4 +1,4 @@
-import { CanvasTexture, Color, LinearFilter } from "three"
+import { CanvasTexture, Color, LinearFilter, SRGBColorSpace } from "three"
 import { chineseBallColor } from "../utils/ballcolors"
 
 export class BallTextureFactory {
@@ -9,7 +9,7 @@ export class BallTextureFactory {
     _color: Color,
     size = 512
   ): CanvasTexture {
-    const key = `v3_${label}_${size}`
+    const key = `v4_${label}_${size}`
     if (this.textureCache.has(key)) {
       return this.textureCache.get(key)!
     }
@@ -83,6 +83,7 @@ export class BallTextureFactory {
 
     const texture = new CanvasTexture(canvas)
     texture.flipY = false
+    texture.colorSpace = SRGBColorSpace
     texture.generateMipmaps = false
     texture.minFilter = LinearFilter
     texture.magFilter = LinearFilter
